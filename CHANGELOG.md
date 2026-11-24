@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 (2026-11-24)
+
+- Fix: a local or custom upstream (for example Ollama on 127.0.0.1) is no longer priced from OpenRouter's list price as an estimate. Those calls are `unpriced` unless you pass `--price`. Found by running the published quickstart against a local upstream: it showed $0.00066 (est.) for a Qwen call on your own hardware.
+
 ## 0.1.0 (2026-11-24)
 
 First release.

@@ -39,7 +39,8 @@ const VENUE_PROVIDER = { openrouter: 'openrouter', venice: 'venice', chutes: 'ch
  * Price for this call at the venue it went to, in order:
  *  1. --price given by the user
  *  2. justweight lists this exact model at this venue
- *  3. OpenRouter's list price for the same model key, flagged estimate (the maker's own price may differ)
+ *  3. OpenRouter's list price for the same model key, flagged estimate (the maker's own price may differ).
+ *     Only for the hosted upstreams: a local or custom upstream has its own economics, so it stays unpriced.
  * Returns { inPer1M, outPer1M, basis, source, estimate } or null.
  */
 export function venuePrice(snapshot, upstream, model, userPrice = null) {
@@ -51,6 +52,7 @@ export function venuePrice(snapshot, upstream, model, userPrice = null) {
     const o = offers.find((x) => x.provider === provider && String(x.model).toLowerCase() === m);
     if (o) return { inPer1M: o.inPer1M, outPer1M: o.outPer1M, basis: `list-price:${provider}`, source: o.source, estimate: false };
   }
+  if (!['openrouter', 'openai', 'anthropic'].includes(upstream)) return null;
   const k = modelKey(model).key;
   const o = offers.find((x) => x.provider === 'openrouter' && modelKey(x.model).key === k && modelKey(x.model).variant.length === 0);
   if (o) return { inPer1M: o.inPer1M, outPer1M: o.outPer1M, basis: `openrouter-list-for:${o.model}`, source: o.source, estimate: true };

@@ -36,6 +36,9 @@ test('venuePrice: --price, then exact listing at the venue, then OpenRouter list
   assert.equal(an.basis, 'openrouter-list-for:anthropic/claude-sonnet-5.5');
   assert.equal(an.estimate, true);
   assert.equal(venuePrice(SNAP, 'openai', 'gpt-unknown-9'), null);
+  // A local or custom upstream is never priced from OpenRouter's list: running Qwen on your own GPU isn't $0.06/M.
+  assert.equal(venuePrice(SNAP, 'local', 'qwen/qwen3.8-27b'), null);
+  assert.equal(venuePrice(SNAP, 'custom:api.example.com', 'qwen/qwen3.8-27b'), null);
   assert.equal(venuePrice(null, 'openrouter', 'deepseek/deepseek-v4.1-flash'), null);
 });
 

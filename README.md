@@ -65,7 +65,7 @@ The proxy uses the first of these that applies:
 1. **Reported by the upstream.** OpenRouter returns `usage.cost` in credits (1 credit = $1). Pass `--trust-reported-cost` to use it from other upstreams.
 2. **`--price <in>,<out>`**, times the tokens the response reports.
 3. **The venue's list price in justweight**, for that exact model at that venue (OpenRouter, Venice, Chutes).
-4. **Estimate:** OpenRouter's list price for the same model, flagged `estimate: true`, because the maker's own price may differ. Claude API ids like `claude-sonnet-5-5-20261001` are matched to `anthropic/claude-sonnet-5.5`.
+4. **Estimate:** OpenRouter's list price for the same model, flagged `estimate: true`, because the maker's own price may differ. This applies only to the OpenRouter, OpenAI and Anthropic upstreams. A local or custom upstream stays unpriced unless you pass `--price`. Claude API ids like `claude-sonnet-5-5-20261001` are matched to `anthropic/claude-sonnet-5.5`.
 
 When cached input tokens are present, they are priced at the full input rate and flagged as an upper bound.
 
