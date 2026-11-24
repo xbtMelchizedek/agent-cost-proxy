@@ -31,4 +31,8 @@ function render(text, label) {
 }
 
 $('file').addEventListener('change', async (e) => { const f = e.target.files[0]; if (f) render(await f.text(), f.name); });
-$('sample').addEventListener('click', async () => { const r = await fetch('sample-calls.jsonl'); render(await r.text(), 'Synthetic sample'); });
+$('sample').addEventListener('click', async () => {
+  const r = await fetch('sample-calls.jsonl');
+  if (!r.ok) { $('sum').textContent = `Could not load the sample: HTTP ${r.status}`; return; }
+  render(await r.text(), 'Synthetic sample (from test fixtures, not real calls)');
+});
