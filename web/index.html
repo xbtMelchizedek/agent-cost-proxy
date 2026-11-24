@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agent-cost-proxy: what your coding agent really spends</title>
+<meta name="description" content="One command, a local proxy for Claude Code, Codex, Hermes and any OpenAI-compatible agent. Records what every call really cost, shows what it would cost at the cheapest venue, and can enforce spend caps. Your key never leaves your machine's process.">
+<script>document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';</script>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="arc/foundation.css">
+<link rel="stylesheet" href="arc/badge.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>agent-cost-proxy</h1>
+    <p class="lede">What did your coding agent's calls really cost, and what would the same tokens cost at the cheapest venue? One command starts a local proxy. Point your agent at it, keep working, then read the report.</p>
+    <p class="muted"><a href="https://github.com/xbtMelchizedek/agent-cost-proxy">GitHub</a> · Prices from <a href="https://xbtmelchizedek.github.io/justweight/">justweight</a> · Ledger by <a href="https://github.com/xbtMelchizedek/agent-spendcap">agent-spendcap</a></p>
+  </header>
+
+  <section class="panel">
+    <h2>Start it</h2>
+    <pre>npx -y github:xbtMelchizedek/agent-cost-proxy --upstream openrouter --max-day 5</pre>
+    <div class="grid2">
+      <div><h3>Codex, Hermes, OpenAI-compatible agents</h3><pre>OPENAI_BASE_URL=http://127.0.0.1:8788/v1</pre></div>
+      <div><h3>Claude Code</h3><pre>npx -y github:xbtMelchizedek/agent-cost-proxy --upstream anthropic
+ANTHROPIC_BASE_URL=http://127.0.0.1:8788</pre></div>
+    </div>
+    <p class="muted">It listens on 127.0.0.1 only and refuses browser requests. Your agent's own key header is passed through. If the agent sends none, the proxy uses the upstream's usual environment variable. Keys, prompts and responses are never written or printed. Then run <code>npx -y github:xbtMelchizedek/agent-cost-proxy report</code>.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Read a report in your browser</h2>
+    <p class="muted">Pick your <code>~/.agent-cost-proxy/calls.jsonl</code>. It is read on this page and not uploaded anywhere. Or <button type="button" id="sample" class="secondary">load the synthetic sample</button>.</p>
+    <input type="file" id="file" accept=".jsonl,.json,application/json">
+    <div id="sum" role="status"></div>
+    <div class="wrap"><table id="tbl"></table></div>
+  </section>
+
+  <section class="panel">
+    <h2>How cost is worked out</h2>
+    <ol>
+      <li><b>Reported by the upstream:</b> OpenRouter returns <code>usage.cost</code> in credits, where 1 credit is $1. This is the real charge.</li>
+      <li><b>Your price:</b> <code>--price 3,15</code> sets USD per 1M input and output tokens, times the tokens the response reports.</li>
+      <li><b>The venue's list price</b> in justweight, for that exact model at that venue.</li>
+      <li><b>Estimate:</b> OpenRouter's list price for the same model, flagged <i>estimate</i>, because the maker's own price may differ. Cached input is priced at the full input rate, so with caching this is an upper bound.</li>
+    </ol>
+    <p>If none of these apply, the call is recorded as <b>unpriced</b>, never as $0. <b>Cheapest</b> is the lowest USD list price justweight has for the same model and the same token counts. It is not a quality, latency or privacy match. With caps on, each call holds an upper bound before it goes out. Calls over a cap get a 403 and never reach the provider.</p>
+  </section>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

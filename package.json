@@ -1,0 +1,55 @@
+{
+  "name": "agent-cost-proxy",
+  "version": "0.1.0",
+  "description": "One command, a local proxy for coding agents (Claude Code, Codex, Hermes, any OpenAI-compatible client): records what every call really cost on an agent-spendcap ledger, shows what the same tokens would cost at the cheapest venue justweight lists, and can enforce spend caps. Your key passes through and is never stored.",
+  "keywords": [
+    "agents",
+    "coding-agents",
+    "claude-code",
+    "codex",
+    "openai",
+    "anthropic",
+    "openrouter",
+    "proxy",
+    "llm",
+    "cost",
+    "budget",
+    "spend-limit",
+    "inference"
+  ],
+  "homepage": "https://xbtmelchizedek.github.io/agent-cost-proxy/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xbtMelchizedek/agent-cost-proxy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xbtMelchizedek/agent-cost-proxy/issues"
+  },
+  "author": "xbtMelchizedek",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "agent-cost-proxy": "src/cli.mjs"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "dependencies": {
+    "agent-spendcap": "github:xbtMelchizedek/agent-spendcap#v0.2.0",
+    "justweight": "github:xbtMelchizedek/justweight#v0.4.0"
+  }
+}

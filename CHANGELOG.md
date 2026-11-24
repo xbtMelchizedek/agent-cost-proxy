@@ -1,0 +1,15 @@
+# Changelog
+
+## 0.1.0 (2026-11-24)
+
+First release.
+
+- `npx -y github:xbtMelchizedek/agent-cost-proxy`: a local proxy on 127.0.0.1:8788 for OpenAI-compatible agents (Chat Completions, Responses, Completions) and Claude Code (Anthropic Messages), JSON or streamed. Upstreams: OpenRouter (default), OpenAI, Anthropic, or any https URL (http on localhost).
+- The agent's own key header passes through. If it sends none, the upstream's usual environment variable is used. Keys, prompts and responses are never stored or printed. Redirects are refused.
+- Local only: loopback peers, a loopback Host, and no browser Origin.
+- Each call's real cost goes on an agent-spendcap ledger. In order: the upstream's reported cost, `--price`, the venue's justweight list price, or OpenRouter's list price flagged as an estimate. Unpriced calls are recorded as unpriced, never $0.
+- Alongside it: the cheapest USD list price justweight has for the same model and tokens.
+- Caps: `--max-day`, `--max-call` or a full agent-spendcap `--policy`. Calls over a cap get a 403 and never reach the provider.
+- `report`: totals and per-model cost against the cheapest listed venue. It checks the ledger's hash chain.
+- A page with a local `calls.jsonl` viewer (nothing uploaded) and a synthetic sample.
+- 17 tests on synthetic responses with no network and no keys, including a real loopback stream with a client disconnect.
