@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 (2026-11-25)
+
+- Record FLOP gateway fields on each call: `usage.cost_flop` and a sanitized `x_flop_receipt` (miner, cost, channel, settlement ids). These are never treated as USD, and prompt-like or nested fields are dropped. Found while pointing the proxy at `https://api.flop.network/v1`.
+- Replace a missing or banned `User-Agent` (`Python-urllib`, `python-requests`, `go-http-client`) with `agent-cost-proxy/0.1.2` before the upstream. `api.flop.network` answers Cloudflare 1010 to Python-urllib's default UA. curl and other agents' UAs are forwarded unchanged.
+
+
 ## 0.1.1 (2026-11-24)
 
 - Fix: a local or custom upstream (for example Ollama on 127.0.0.1) is no longer priced from OpenRouter's list price as an estimate. Those calls are `unpriced` unless you pass `--price`. Found by running the published quickstart against a local upstream: it showed $0.00066 (est.) for a Qwen call on your own hardware.

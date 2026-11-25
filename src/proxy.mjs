@@ -18,6 +18,8 @@ export const UPSTREAMS = {
 
 const METERED = /\/(chat\/completions|responses|messages|completions)$/;
 const HOP = new Set(['host', 'connection', 'keep-alive', 'content-length', 'transfer-encoding', 'accept-encoding', 'origin', 'referer', 'proxy-authorization', 'proxy-connection', 'te', 'trailer', 'upgrade', 'cookie']);
+const PROXY_UA = 'agent-cost-proxy/0.1.2';
+const BANNED_UA = /^(python-urllib|python-requests|go-http-client)\b/i;
 const HOP_OUT = new Set(['connection', 'keep-alive', 'content-length', 'content-encoding', 'transfer-encoding', 'set-cookie']);
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const MAX_BODY = 32 * 1024 * 1024;
@@ -43,6 +45,13 @@ export function capsPolicy({ maxCall, maxDay, policy } = {}) {
 }
 
 const idSafe = (s) => String(s).replace(/[^A-Za-z0-9._\/:@-]/g, '-').slice(0, 120) || 'unknown';
+
+function receiptRef(usage) {
+  const candidates = [usage?.id, usage?.flopReceipt?.request_id, usage?.flopReceipt?.terminal_event, usage?.flopReceipt?.tx_hash];
+  const s = candidates.find((x) => typeof x === 'string' && x.length >= 8);
+  return s ? s.slice(0, 200) : null;
+}
+
 
 function errorBody(type, message) {
   // Readable by OpenAI-style clients (error.message) and Anthropic clients (type: "error", error.type).
@@ -126,6 +135,9 @@ export function createProxy(o) {
     const headers = {};
     for (const [k, v] of Object.entries(req.headers)) if (!HOP.has(k.toLowerCase())) headers[k] = v;
     headers['accept-encoding'] = 'identity';
+    // api.flop.network (and some other CDNs) ban Python-urllib's default UA with Cloudflare 1010.
+    const ua = String(headers['user-agent'] ?? '');
+    if (!ua || BANNED_UA.test(ua)) headers['user-agent'] = PROXY_UA;
     const hasKey = headers.authorization || headers['x-api-key'];
     if (!hasKey && upstream.keyEnv && env[upstream.keyEnv]) {
       if (upstream.auth === 'x-api-key') headers['x-api-key'] = env[upstream.keyEnv];
@@ -167,7 +179,7 @@ export function createProxy(o) {
 
     stats.calls++;
     const usage = up.ok ? (reader ? reader.result() : (() => { try { return fromJson(JSON.parse(text)); } catch { return null; } })()) : null;
-    const entry = { ts: new Date(t0).toISOString(), ms: now() - t0, api, upstream: upstream.name, model, status: up.status, stream: sse, tokens: usage ? { input: usage.inputTokens, output: usage.outputTokens, cached: usage.cachedTokens } : null };
+    const entry = { ts: new Date(t0).toISOString(), ms: now() - t0, api, upstream: upstream.name, model, status: up.status, stream: sse, tokens: usage ? { input: usage.inputTokens, output: usage.outputTokens, cached: usage.cachedTokens } : null, costFlop: usage?.costFlop ?? null, flopReceipt: usage?.flopReceipt ?? null };
 
     if (!up.ok) {
       if (hold) cap.release(hold.id);
@@ -181,12 +193,12 @@ export function createProxy(o) {
     let outcome;
     if (hold) {
       const nano = charged?.nano ?? toNano(hold.reservedUsd);
-      cap.settle(hold.id, fromNano(nano), { receipt: typeof usage?.id === 'string' && usage.id.length >= 8 ? usage.id.slice(0, 200) : null });
+      cap.settle(hold.id, fromNano(nano), { receipt: receiptRef(usage) });
       if (!charged) charged = { nano, basis: broken ? 'stream-broke-charged-full-hold' : 'no-usage-charged-full-hold', estimate: true };
       outcome = 'settled';
     } else if (charged && charged.nano > 0n) {
       const a = cap.authorize({ venue: idSafe(upstream.name), model: idSafe(model), usd: fromNano(charged.nano) });
-      if (a.ok) { cap.settle(a.id, fromNano(charged.nano), { receipt: typeof usage?.id === 'string' && usage.id.length >= 8 ? usage.id.slice(0, 200) : null }); outcome = 'settled'; }
+      if (a.ok) { cap.settle(a.id, fromNano(charged.nano), { receipt: receiptRef(usage) }); outcome = 'settled'; }
       else outcome = 'over-record-limit';
     } else {
       ledger.append({ t: 'unpriced', ts: now(), venue: idSafe(upstream.name), model: idSafe(model), tokens: entry.tokens, note: usage ? 'no price known for this model and venue' : 'response carried no usage' });

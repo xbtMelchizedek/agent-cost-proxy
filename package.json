@@ -1,6 +1,6 @@
 {
   "name": "agent-cost-proxy",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "One command, a local proxy for coding agents (Claude Code, Codex, Hermes, any OpenAI-compatible client): records what every call really cost on an agent-spendcap ledger, shows what the same tokens would cost at the cheapest venue justweight lists, and can enforce spend caps. Your key passes through and is never stored.",
   "keywords": [
     "agents",

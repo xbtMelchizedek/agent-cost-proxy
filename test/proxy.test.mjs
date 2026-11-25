@@ -225,3 +225,37 @@ test('real HTTP end to end: local upstream over loopback, streamed in slow chunk
     await new Promise((r) => upstream.close(r));
   }
 });
+
+test('FLOP JSON: cost_flop and x_flop_receipt are logged, not used as USD; spendcap receipt uses the request id', async () => {
+  const body = fx('flop_completion.json');
+  const p = await boot({ upstream: 'https://api.flop.network/v1', reply: { body }, caps: { maxCall: "1", maxDay: "1" }, price: { inPer1M: '1', outPer1M: '1' }, env: { UPSTREAM_API_KEY: FAKE_KEY } });
+  try {
+    const r = await post(p.base, '/v1/chat/completions', { model: 'qwen/qwen2.5-0.5b-instruct', messages: [{ role: 'user', content: 'hi' }], max_tokens: 8 });
+    assert.equal(r.status, 200);
+    assert.equal(await r.text(), body);
+    await new Promise((r) => setTimeout(r, 20));
+    const [c] = lines(p.dir, 'calls.jsonl');
+    assert.equal(c.costFlop, 0.000016);
+    assert.equal(c.flopReceipt.miner, '5FakeMinerAddressForTestsOnlyDontUse');
+    assert.equal(c.flopReceipt.channel_id, '0xabc');
+    assert.ok(!JSON.stringify(c).includes('this must never be logged'));
+    assert.equal(c.cost.basis, 'price-flag'); // FLOP is not treated as usage.cost USD
+    const led = lines(p.dir, 'ledger.jsonl');
+    assert.equal(led[1].t, 'settle');
+    assert.equal(led[1].receipt, 'chatcmpl-synthetic-flop');
+    noKeyAnywhere(p.dir, p.logs);
+  } finally { await p.close(); }
+});
+
+test('banned User-Agent (Python-urllib) is replaced before the upstream; curl is forwarded', async () => {
+  const body = fx('chat_completion.json');
+  const p = await boot({ reply: { body }, env: { OPENROUTER_API_KEY: FAKE_KEY } });
+  try {
+    await (await post(p.base, '/v1/chat/completions', { model: 'deepseek/deepseek-v4.1-flash', messages: [] }, { 'user-agent': 'Python-urllib/3.13' })).text();
+    assert.equal(p.seen[0].headers['user-agent'], 'agent-cost-proxy/0.1.2');
+    await (await post(p.base, '/v1/chat/completions', { model: 'deepseek/deepseek-v4.1-flash', messages: [] }, { 'user-agent': 'curl/8.5.0' })).text();
+    assert.equal(p.seen[1].headers['user-agent'], 'curl/8.5.0');
+    noKeyAnywhere(p.dir, p.logs);
+  } finally { await p.close(); }
+});
+

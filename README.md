@@ -71,6 +71,8 @@ When cached input tokens are present, they are priced at the full input rate and
 
 If none apply, the call is recorded as **unpriced**, never as $0. If a response carries no usage and a hold was placed, the full hold is charged. That's agent-spendcap's rule: an unknown outcome counts as spent.
 
+FLOP gateways report `usage.cost_flop` and `x_flop_receipt`. Those are stored on the call line as `costFlop` and `flopReceipt`. They are **not** read as `usage.cost` USD, even with `--trust-reported-cost`. Caps still need a USD `--price` (or a list price) if you want a hold; that price is only a request-size bound, not the FLOP charge.
+
 **Cheapest** is the lowest USD list price in justweight for the same model key and the same token counts, skipping batch tiers. It is **not** a quality, latency, precision or privacy match. The line names the venue and model so you can judge. Prices refresh from justweight's snapshot every 2 hours. Use `--snapshot <file>` to pin one, or `--snapshot off`.
 
 For Chat Completions streams, the proxy adds `stream_options.include_usage: true` when the client didn't set it, so the stream reports its tokens. Disable this with `--no-usage-inject`. Responses and Anthropic streams always carry usage.
@@ -82,7 +84,7 @@ For Chat Completions streams, the proxy adds `stream_options.include_usage: true
 | File | Contents |
 |---|---|
 | `ledger.jsonl` | agent-spendcap's hash-chained ledger: holds, settlements, denials, and `unpriced` entries. `report` refuses a ledger whose chain is broken. |
-| `calls.jsonl` | One line per call: time, API, upstream, model, status, tokens, cost and its basis, cheapest venue and its price and source. |
+| `calls.jsonl` | One line per call: time, API, upstream, model, status, tokens, cost and its basis, cheapest venue and its price and source. If the upstream is a FLOP gateway, also `costFlop` and a sanitized `flopReceipt` (miner, channel, settlement ids). FLOP is not recorded as USD. |
 
 ## Options
 
@@ -100,7 +102,7 @@ agent-cost-proxy report [--dir <path>] [--json]
 - Only the Chat Completions, Responses, Completions and Anthropic Messages endpoints are metered. Other paths (`/v1/models` and so on) pass through uncounted.
 - It costs what the response reports. If a provider bills for something it doesn't report, such as tool calls or web search, that isn't seen.
 - The cheapest venue is a list price, not a promise that your agent would work as well there.
-- Tests use synthetic responses that follow the documented shapes (see `test/fixtures/README.md`). No live call has been made through it by this project, because that needs a paid key.
+- Tests use synthetic responses that follow the documented shapes (see `test/fixtures/README.md`). CI does not make live paid calls. A missing or `Python-urllib` User-Agent is replaced before the upstream: some CDNs (including `api.flop.network`) ban it.
 
 ## Part of the agent inference kit
 
@@ -114,6 +116,6 @@ npm install && npm test
 node scripts/make-sample.mjs   # rebuild the page's synthetic sample
 ```
 
-17 tests, with no network and no keys. They include a real loopback HTTP run with a slow stream and a client that disconnects mid-stream. Dependencies: agent-spendcap and justweight. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+20 tests, with no network and no keys. They include a real loopback HTTP run with a slow stream and a client that disconnects mid-stream. Dependencies: agent-spendcap and justweight. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 MIT. The page uses Arc UI foundation tokens (MIT, see `web/arc/LICENSE`).

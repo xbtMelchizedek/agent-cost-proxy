@@ -1,0 +1,17 @@
+{
+  "id": "chatcmpl-synthetic-flop",
+  "object": "chat.completion",
+  "created": 1730000000,
+  "model": "qwen/qwen2.5-0.5b-instruct",
+  "choices": [{ "index": 0, "message": { "role": "assistant", "content": "pong" }, "finish_reason": "stop" }],
+  "usage": { "prompt_tokens": 12, "completion_tokens": 4, "total_tokens": 16, "cost_flop": 0.000016 },
+  "x_flop_receipt": {
+    "miner": "5FakeMinerAddressForTestsOnlyDontUse",
+    "cost_flop": 0.000016,
+    "channel_id": "0xabc",
+    "terminal_event": "0xdef:1",
+    "request_id": "req-synthetic-flop-1",
+    "prompt": "this must never be logged",
+    "nested": { "secret": "no" }
+  }
+}
